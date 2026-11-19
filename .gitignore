@@ -1,0 +1,25 @@
+# 依赖与构建产物
+node_modules/
+frontend/dist/
+backend/target/
+
+# 临时文件
+.tmp/
+*.log
+*.pid
+
+# 本地环境变量
+frontend/.env.local
+
+# IDE
+.idea/
+.vscode/
+*.iml
+
+# 系统
+.DS_Store
+Thumbs.db
+
+# 打包产物与本地工作目录
+release/
+.workbuddy/

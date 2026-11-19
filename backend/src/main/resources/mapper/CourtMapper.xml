@@ -1,0 +1,57 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.badminton.mapper.CourtMapper">
+
+    <select id="selectWithVenue" resultType="com.badminton.entity.Court">
+        SELECT c.*, v.venue_name,
+               (SELECT COUNT(*) FROM booking b WHERE b.court_id = c.court_id) AS total_bookings
+        FROM court c
+        JOIN venue v ON v.venue_id = c.venue_id
+        <where>
+            <if test="status != null and status != ''">
+                AND c.operational_status = #{status}
+            </if>
+            <if test="venueId != null">
+                AND c.venue_id = #{venueId}
+            </if>
+        </where>
+        ORDER BY c.court_id ASC
+    </select>
+
+    <select id="selectDetail" resultType="com.badminton.entity.Court">
+        SELECT c.*, v.venue_name,
+               (SELECT COUNT(*) FROM booking b WHERE b.court_id = c.court_id) AS total_bookings
+        FROM court c
+        JOIN venue v ON v.venue_id = c.venue_id
+        WHERE c.court_id = #{courtId}
+    </select>
+
+    <select id="countActiveBookings" resultType="long">
+        SELECT COUNT(*)
+        FROM booking
+        WHERE court_id = #{courtId}
+          AND status IN ('PENDING_PAYMENT', 'CONFIRMED', 'IN_PROGRESS')
+          AND end_at &gt; #{now}
+    </select>
+
+    <select id="selectOverview" resultType="com.badminton.dto.CourtOverviewRow">
+        SELECT c.court_id,
+               c.court_name,
+               c.court_number,
+               c.hourly_rate,
+               c.operational_status,
+               COALESCE(SUM(CASE WHEN s.slot_status = 'AVAILABLE' THEN 1 ELSE 0 END), 0) AS available_slots,
+               COALESCE(SUM(CASE WHEN s.slot_status = 'BOOKED' THEN 1 ELSE 0 END), 0) AS booked_slots,
+               COALESCE(SUM(CASE WHEN s.slot_status = 'IN_USE' THEN 1 ELSE 0 END), 0) AS in_use_slots,
+               MAX(CASE WHEN s.slot_start &lt;= #{now} AND s.slot_end &gt; #{now}
+                        THEN s.slot_status END) AS current_status
+        FROM court c
+        LEFT JOIN court_slot s
+               ON s.court_id = c.court_id
+                  AND DATE(s.slot_start) = #{date}
+        WHERE c.operational_status &lt;&gt; 'DISABLED'
+        GROUP BY c.court_id, c.court_name, c.court_number, c.hourly_rate, c.operational_status
+        ORDER BY c.court_id
+    </select>
+</mapper>

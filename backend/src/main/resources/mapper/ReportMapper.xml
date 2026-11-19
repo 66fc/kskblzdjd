@@ -1,0 +1,93 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.badminton.mapper.ReportMapper">
+
+    <select id="selectDailyRentalTrend" resultType="com.badminton.dto.DailyRevenueRow">
+        WITH RECURSIVE days AS (
+            SELECT #{from} AS stat_date
+            UNION ALL
+            SELECT DATE_ADD(stat_date, INTERVAL 1 DAY) FROM days WHERE stat_date &lt; #{to}
+        )
+        SELECT days.stat_date,
+               ROUND(COALESCE(SUM(u.actual_fee_amount *
+                                  TIMESTAMPDIFF(MINUTE,
+                                                GREATEST(u.actual_start_at, days.stat_date),
+                                                LEAST(u.actual_end_at, DATE_ADD(days.stat_date, INTERVAL 1 DAY)))
+                                  / NULLIF(u.actual_minutes, 0)), 0), 2) AS amount,
+               COALESCE(SUM(TIMESTAMPDIFF(MINUTE,
+                                          GREATEST(u.actual_start_at, days.stat_date),
+                                          LEAST(u.actual_end_at, DATE_ADD(days.stat_date, INTERVAL 1 DAY)))), 0) AS minutes
+        FROM days
+        LEFT JOIN court_usage_record u
+               ON u.settlement_status &lt;&gt; 'VOID'
+                  AND u.actual_start_at &lt; DATE_ADD(days.stat_date, INTERVAL 1 DAY)
+                  AND u.actual_end_at &gt; days.stat_date
+        GROUP BY days.stat_date
+        ORDER BY days.stat_date
+    </select>
+
+    <select id="selectDailyProductTrend" resultType="com.badminton.dto.DailyRevenueRow">
+        WITH RECURSIVE days AS (
+            SELECT #{from} AS stat_date
+            UNION ALL
+            SELECT DATE_ADD(stat_date, INTERVAL 1 DAY) FROM days WHERE stat_date &lt; #{to}
+        )
+        SELECT days.stat_date,
+               ROUND(COALESCE(SUM(so.total_amount), 0), 2) AS amount,
+               COUNT(so.sales_order_id) AS order_count
+        FROM days
+        LEFT JOIN sales_order so
+               ON so.payment_status = 'PAID'
+                  AND DATE(so.paid_at) = days.stat_date
+        GROUP BY days.stat_date
+        ORDER BY days.stat_date
+    </select>
+
+    <select id="selectCourtUsageOfDay" resultType="com.badminton.dto.CourtUsageRow">
+        SELECT c.court_id,
+               c.court_name,
+               c.court_number,
+               c.operational_status,
+               c.hourly_rate,
+               COALESCE(SUM(TIMESTAMPDIFF(MINUTE,
+                                          GREATEST(u.actual_start_at, #{dayStart}),
+                                          LEAST(u.actual_end_at, #{dayEnd}))), 0) AS minutes,
+               ROUND(COALESCE(SUM(u.actual_fee_amount *
+                                  TIMESTAMPDIFF(MINUTE,
+                                                GREATEST(u.actual_start_at, #{dayStart}),
+                                                LEAST(u.actual_end_at, #{dayEnd}))
+                                  / NULLIF(u.actual_minutes, 0)), 0), 2) AS amount
+        FROM court c
+        LEFT JOIN court_usage_record u
+               ON u.court_id = c.court_id
+                  AND u.settlement_status &lt;&gt; 'VOID'
+                  AND u.actual_start_at &lt; #{dayEnd}
+                  AND u.actual_end_at &gt; #{dayStart}
+        GROUP BY c.court_id, c.court_name, c.court_number, c.operational_status, c.hourly_rate
+        ORDER BY c.court_id
+    </select>
+
+    <select id="selectDashboardCounts" resultType="com.badminton.dto.DashboardCounts">
+        SELECT
+            (SELECT COUNT(*) FROM court) AS total_courts,
+            (SELECT COUNT(*) FROM court WHERE operational_status = 'OPEN') AS open_courts,
+            (SELECT COUNT(*) FROM court_slot s
+             JOIN court c ON c.court_id = s.court_id
+             WHERE s.slot_start &lt;= #{now} AND s.slot_end &gt; #{now}
+               AND s.slot_status = 'AVAILABLE' AND c.operational_status = 'OPEN') AS free_courts_now,
+            (SELECT COUNT(DISTINCT s.court_id) FROM court_slot s
+             WHERE s.slot_start &lt;= #{now} AND s.slot_end &gt; #{now}
+               AND s.slot_status = 'IN_USE') AS in_use_courts,
+            (SELECT COUNT(*) FROM court_slot
+             WHERE DATE(slot_start) = #{date}
+               AND slot_status IN ('BOOKED', 'IN_USE')) AS booked_slots_today,
+            (SELECT COUNT(*) FROM member WHERE role = 'MEMBER') AS total_members,
+            (SELECT COUNT(*) FROM booking
+             WHERE start_at &gt;= #{dayStart} AND start_at &lt; #{dayEnd}) AS today_bookings,
+            (SELECT COUNT(*) FROM booking
+             WHERE start_at &gt;= #{dayStart} AND start_at &lt; #{dayEnd}
+               AND status = 'COMPLETED') AS today_completed_bookings,
+            (SELECT COUNT(*) FROM booking WHERE status = 'PENDING_PAYMENT') AS pending_bookings
+    </select>
+</mapper>

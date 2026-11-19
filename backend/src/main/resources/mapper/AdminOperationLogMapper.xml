@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.badminton.mapper.AdminOperationLogMapper">
+
+    <select id="selectPageFiltered" resultType="com.badminton.entity.AdminOperationLog">
+        SELECT *
+        FROM admin_operation_log
+        <where>
+            <if test="module != null and module != ''">
+                AND module = #{module}
+            </if>
+            <if test="keyword != null and keyword != ''">
+                AND (operator_name LIKE CONCAT('%', #{keyword}, '%')
+                     OR action LIKE CONCAT('%', #{keyword}, '%')
+                     OR detail LIKE CONCAT('%', #{keyword}, '%')
+                     OR target_id LIKE CONCAT('%', #{keyword}, '%'))
+            </if>
+            <if test="date != null">
+                AND created_at &gt;= #{date}
+                AND created_at &lt; DATE_ADD(#{date}, INTERVAL 1 DAY)
+            </if>
+        </where>
+        ORDER BY created_at DESC, log_id DESC
+    </select>
+</mapper>

@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.badminton.mapper.CourtUsageRecordMapper">
+
+    <select id="selectPageWithNames" resultType="com.badminton.entity.CourtUsageRecord">
+        SELECT u.*, b.booking_no, c.court_name
+        FROM court_usage_record u
+        JOIN booking b ON b.booking_id = u.booking_id
+        JOIN court c ON c.court_id = u.court_id
+        <where>
+            <if test="courtId != null">
+                AND u.court_id = #{courtId}
+            </if>
+            <if test="memberId != null">
+                AND b.member_id = #{memberId}
+            </if>
+            <if test="from != null">
+                AND u.actual_end_at &gt;= #{from}
+            </if>
+            <if test="to != null">
+                AND u.actual_start_at &lt; DATE_ADD(#{to}, INTERVAL 1 DAY)
+            </if>
+        </where>
+        ORDER BY u.actual_start_at DESC
+    </select>
+</mapper>

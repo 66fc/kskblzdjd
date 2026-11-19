@@ -1,0 +1,60 @@
+server:
+  port: 8080
+  servlet:
+    encoding:
+      charset: UTF-8
+      force: true
+
+spring:
+  application:
+    name: badminton-admin
+  datasource:
+    driver-class-name: com.mysql.cj.jdbc.Driver
+    url: jdbc:mysql://${DB_HOST:127.0.0.1}:${DB_PORT:3307}/${DB_NAME:badminton_db}?useUnicode=true&characterEncoding=utf8&serverTimezone=Asia/Shanghai&useSSL=false&allowPublicKeyRetrieval=true&rewriteBatchedStatements=true
+    username: ${DB_USER:root}
+    password: ${DB_PWD:root123}
+    hikari:
+      maximum-pool-size: 10
+      minimum-idle: 2
+      connection-timeout: 5000
+  jackson:
+    date-format: yyyy-MM-dd HH:mm:ss
+    time-zone: Asia/Shanghai
+    default-property-inclusion: non_null
+  mvc:
+    problemdetails:
+      enabled: false
+
+mybatis-plus:
+  configuration:
+    map-underscore-to-camel-case: true
+    log-impl: org.apache.ibatis.logging.slf4j.Slf4jImpl
+  global-config:
+    banner: false
+    db-config:
+      id-type: auto
+      logic-delete-field: null
+
+app:
+  jwt:
+    secret: "badminton-court-management-jwt-secret-key-2026-please-change-in-production"
+    expire-hours: 12
+  cors:
+    # 允许的来源模式，逗号分隔；* 表示回显请求来源（配合 JWT 无 Cookie 场景安全）。
+    # 演示/局域网/隧道部署默认放开；生产环境用环境变量 CORS_ORIGIN_PATTERNS 收紧，
+    # 例如：CORS_ORIGIN_PATTERNS=https://club.example.com
+    allowed-origin-patterns: "${CORS_ORIGIN_PATTERNS:*}"
+
+springdoc:
+  api-docs:
+    path: /v3/api-docs
+  swagger-ui:
+    path: /swagger-ui.html
+    tags-sorter: alpha
+    operations-sorter: method
+
+logging:
+  level:
+    root: INFO
+    com.badminton: INFO
+    com.badminton.mapper: INFO

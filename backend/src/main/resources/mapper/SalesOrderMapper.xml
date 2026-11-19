@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.badminton.mapper.SalesOrderMapper">
+
+    <select id="selectPageWithMember" resultType="com.badminton.entity.SalesOrder">
+        SELECT so.*, m.nickname AS member_nickname
+        FROM sales_order so
+        LEFT JOIN member m ON m.member_id = so.member_id
+        <where>
+            <if test="from != null">
+                AND so.created_at &gt;= #{from}
+            </if>
+            <if test="to != null">
+                AND so.created_at &lt; DATE_ADD(#{to}, INTERVAL 1 DAY)
+            </if>
+            <if test="status != null and status != ''">
+                AND so.payment_status = #{status}
+            </if>
+            <if test="memberId != null">
+                AND so.member_id = #{memberId}
+            </if>
+            <if test="keyword != null and keyword != ''">
+                AND (so.order_no LIKE CONCAT('%', #{keyword}, '%')
+                     OR m.nickname LIKE CONCAT('%', #{keyword}, '%'))
+            </if>
+        </where>
+        ORDER BY so.created_at DESC, so.sales_order_id DESC
+    </select>
+
+    <select id="selectDetail" resultType="com.badminton.entity.SalesOrder">
+        SELECT so.*, m.nickname AS member_nickname
+        FROM sales_order so
+        LEFT JOIN member m ON m.member_id = so.member_id
+        WHERE so.sales_order_id = #{salesOrderId}
+    </select>
+</mapper>

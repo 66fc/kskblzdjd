@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.badminton.mapper.MemberMapper">
+
+    <select id="selectPageWithLevel" resultType="com.badminton.entity.Member">
+        SELECT m.*, ml.level_name, ml.discount_rate
+        FROM member m
+        JOIN member_level ml ON ml.level_id = m.level_id
+        <where>
+            <if test="role != null and role != ''">
+                AND m.role = #{role}
+            </if>
+            <if test="kw != null and kw != ''">
+                AND (m.username LIKE CONCAT('%', #{kw}, '%')
+                     OR m.nickname LIKE CONCAT('%', #{kw}, '%')
+                     OR m.phone LIKE CONCAT('%', #{kw}, '%'))
+            </if>
+            <if test="levelId != null">
+                AND m.level_id = #{levelId}
+            </if>
+            <if test="status != null and status != ''">
+                AND m.status = #{status}
+            </if>
+        </where>
+        ORDER BY m.member_id ASC
+    </select>
+
+    <select id="selectWithLevel" resultType="com.badminton.entity.Member">
+        SELECT m.*, ml.level_name, ml.discount_rate
+        FROM member m
+        JOIN member_level ml ON ml.level_id = m.level_id
+        WHERE m.member_id = #{memberId}
+    </select>
+</mapper>

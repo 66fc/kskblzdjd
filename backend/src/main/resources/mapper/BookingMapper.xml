@@ -1,0 +1,83 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.badminton.mapper.BookingMapper">
+
+    <sql id="detailColumns">
+        b.*,
+        m.nickname AS member_nickname,
+        m.phone AS member_phone,
+        ml.level_name AS member_level_name,
+        c.court_name,
+        c.court_number,
+        v.venue_name
+    </sql>
+
+    <select id="selectAdminPage" resultType="com.badminton.entity.Booking">
+        SELECT <include refid="detailColumns"/>
+        FROM booking b
+        JOIN member m ON m.member_id = b.member_id
+        JOIN member_level ml ON ml.level_id = m.level_id
+        JOIN court c ON c.court_id = b.court_id
+        JOIN venue v ON v.venue_id = c.venue_id
+        <where>
+            <if test="keyword != null and keyword != ''">
+                AND (b.booking_no LIKE CONCAT('%', #{keyword}, '%')
+                     OR m.nickname LIKE CONCAT('%', #{keyword}, '%')
+                     OR m.phone LIKE CONCAT('%', #{keyword}, '%')
+                     OR c.court_name LIKE CONCAT('%', #{keyword}, '%'))
+            </if>
+            <if test="memberId != null">
+                AND b.member_id = #{memberId}
+            </if>
+            <if test="courtId != null">
+                AND b.court_id = #{courtId}
+            </if>
+            <if test="status != null and status != ''">
+                AND b.status = #{status}
+            </if>
+            <if test="date != null">
+                AND b.start_at &gt;= #{date}
+                AND b.start_at &lt; DATE_ADD(#{date}, INTERVAL 1 DAY)
+            </if>
+        </where>
+        ORDER BY b.start_at DESC, b.booking_id DESC
+    </select>
+
+    <select id="selectMemberPage" resultType="com.badminton.entity.Booking">
+        SELECT <include refid="detailColumns"/>
+        FROM booking b
+        JOIN member m ON m.member_id = b.member_id
+        JOIN member_level ml ON ml.level_id = m.level_id
+        JOIN court c ON c.court_id = b.court_id
+        JOIN venue v ON v.venue_id = c.venue_id
+        WHERE b.member_id = #{memberId}
+        <if test="status != null and status != ''">
+            AND b.status = #{status}
+        </if>
+        <if test="date != null">
+            AND b.start_at &gt;= #{date}
+            AND b.start_at &lt; DATE_ADD(#{date}, INTERVAL 1 DAY)
+        </if>
+        ORDER BY b.start_at DESC, b.booking_id DESC
+    </select>
+
+    <select id="selectDetail" resultType="com.badminton.entity.Booking">
+        SELECT <include refid="detailColumns"/>
+        FROM booking b
+        JOIN member m ON m.member_id = b.member_id
+        JOIN member_level ml ON ml.level_id = m.level_id
+        JOIN court c ON c.court_id = b.court_id
+        JOIN venue v ON v.venue_id = c.venue_id
+        WHERE b.booking_id = #{bookingId}
+    </select>
+
+    <select id="countCreatedBetween" resultType="long">
+        SELECT COUNT(*) FROM booking
+        WHERE created_at &gt;= #{start} AND created_at &lt; #{end}
+    </select>
+
+    <select id="countByStatus" resultType="long">
+        SELECT COUNT(*) FROM booking WHERE status = #{status}
+    </select>
+</mapper>

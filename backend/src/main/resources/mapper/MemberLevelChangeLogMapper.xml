@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.badminton.mapper.MemberLevelChangeLogMapper">
+
+    <select id="selectByMember" resultType="com.badminton.entity.MemberLevelChangeLog">
+        SELECT l.*,
+               m.nickname AS member_nickname,
+               ol.level_name AS old_level_name,
+               nl.level_name AS new_level_name,
+               op.nickname AS operator_name
+        FROM member_level_change_log l
+        JOIN member m ON m.member_id = l.member_id
+        LEFT JOIN member_level ol ON ol.level_id = l.old_level_id
+        JOIN member_level nl ON nl.level_id = l.new_level_id
+        LEFT JOIN member op ON op.member_id = l.operator_id
+        WHERE l.member_id = #{memberId}
+        ORDER BY l.created_at DESC, l.change_id DESC
+    </select>
+
+    <select id="selectRecent" resultType="com.badminton.entity.MemberLevelChangeLog">
+        SELECT l.*,
+               m.nickname AS member_nickname,
+               ol.level_name AS old_level_name,
+               nl.level_name AS new_level_name,
+               op.nickname AS operator_name
+        FROM member_level_change_log l
+        JOIN member m ON m.member_id = l.member_id
+        LEFT JOIN member_level ol ON ol.level_id = l.old_level_id
+        JOIN member_level nl ON nl.level_id = l.new_level_id
+        LEFT JOIN member op ON op.member_id = l.operator_id
+        ORDER BY l.created_at DESC, l.change_id DESC
+        LIMIT #{limit}
+    </select>
+</mapper>

@@ -1,0 +1,15 @@
+# MySQL 8.0 便携式配置示例
+# 复制到运行时根目录并重命名为 my.ini，按实际路径修改 basedir / datadir
+[mysqld]
+basedir=D:/DevTools/badminton-runtime/mysql/mysql-8.0.28-winx64
+datadir=D:/DevTools/badminton-runtime/mysql-data
+port=3307
+character-set-server=utf8mb4
+collation-server=utf8mb4_0900_ai_ci
+default-time-zone=+08:00
+max_connections=200
+log-error=D:/DevTools/badminton-runtime/mysql-error.log
+
+[client]
+port=3307
+default-character-set=utf8mb4
